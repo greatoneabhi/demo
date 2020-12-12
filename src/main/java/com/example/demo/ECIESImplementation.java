@@ -13,9 +13,10 @@ import java.security.spec.ECGenParameterSpec;
 public class ECIESImplementation {
     public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchProviderException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException {
         System.out.println("ECIES Implementation");
+        Security.addProvider(new BouncyCastleProvider());
 
         ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
         keyPairGenerator.initialize(ecSpec);
 
         KeyPair keyPairU = keyPairGenerator.generateKeyPair();
@@ -50,15 +51,13 @@ public class ECIESImplementation {
     }
 
     public static void encryptionAndDecryption() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Security.addProvider(new BouncyCastleProvider());
-
-        KeyPairGenerator ecKeyGen = KeyPairGenerator.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator ecKeyGen = KeyPairGenerator.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
         ecKeyGen.initialize(new ECGenParameterSpec("secp256r1"));
 
         KeyPair ecKeyPair = ecKeyGen.generateKeyPair();
 
-        Cipher iesCipher = Cipher.getInstance("ECIESwithAES-CBC");
-        Cipher iesDecipher = Cipher.getInstance("ECIESwithAES-CBC");
+        Cipher iesCipher = Cipher.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
+        Cipher iesDecipher = Cipher.getInstance("ECIES", BouncyCastleProvider.PROVIDER_NAME);
         iesCipher.init(Cipher.ENCRYPT_MODE, ecKeyPair.getPublic());
 
         String message = "Hello World";
