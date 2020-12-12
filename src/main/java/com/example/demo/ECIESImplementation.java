@@ -1,12 +1,17 @@
 package com.example.demo;
 
-import javax.crypto.KeyAgreement;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
+
+import javax.crypto.*;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 
 public class ECIESImplementation {
-    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
+    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchProviderException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException {
         System.out.println("ECIES Implementation");
 
         ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
@@ -14,12 +19,12 @@ public class ECIESImplementation {
         keyPairGenerator.initialize(ecSpec);
 
         KeyPair keyPairU = keyPairGenerator.generateKeyPair();
-        PrivateKey privateKeyU = keyPairU.getPrivate();
-        PublicKey publicKeyU = keyPairU.getPublic();
+        ECPrivateKey privateKeyU = (ECPrivateKey) keyPairU.getPrivate();
+        ECPublicKey publicKeyU = (ECPublicKey) keyPairU.getPublic();
 
         KeyPair keyPairV = keyPairGenerator.generateKeyPair();
-        PrivateKey privateKeyV = keyPairV.getPrivate();
-        PublicKey publicKeyV = keyPairV.getPublic();
+        ECPrivateKey privateKeyV = (ECPrivateKey) keyPairV.getPrivate();
+        ECPublicKey publicKeyV = (ECPublicKey) keyPairV.getPublic();
 
         System.out.println("Private key U: "+privateKeyU.getEncoded().toString());
         System.out.println("Public Key U: "+publicKeyU.toString());
@@ -40,5 +45,30 @@ public class ECIESImplementation {
         System.out.println("Secret computed by V: 0x" + (new BigInteger(1, ecdhV.generateSecret())
                 .toString(16).toUpperCase()));
 
+        encryptionAndDecryption();
+
+    }
+
+    public static void encryptionAndDecryption() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchPaddingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Security.addProvider(new BouncyCastleProvider());
+
+        KeyPairGenerator ecKeyGen = KeyPairGenerator.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
+        ecKeyGen.initialize(new ECGenParameterSpec("secp256r1"));
+
+        KeyPair ecKeyPair = ecKeyGen.generateKeyPair();
+
+        Cipher iesCipher = Cipher.getInstance("ECIESwithAES-CBC");
+        Cipher iesDecipher = Cipher.getInstance("ECIESwithAES-CBC");
+        iesCipher.init(Cipher.ENCRYPT_MODE, ecKeyPair.getPublic());
+
+        String message = "Hello World";
+
+        byte[] ciphertext = iesCipher.doFinal(message.getBytes());
+        System.out.println(Hex.toHexString(ciphertext));
+
+        iesDecipher.init(Cipher.DECRYPT_MODE, ecKeyPair.getPrivate(), iesCipher.getParameters());
+        byte[] plaintext = iesDecipher.doFinal(ciphertext);
+
+        System.out.println(new String(plaintext));
     }
 }
